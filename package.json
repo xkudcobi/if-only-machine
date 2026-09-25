@@ -1,0 +1,11 @@
+{
+  "name": "if-only-machine",
+  "version": "1.0.0",
+  "description": "Replay a simple buying rule through years of made-up market history and find out if it was skill or luck.",
+  "private": true,
+  "license": "MIT",
+  "author": "xkudcobi",
+  "scripts": {
+    "test": "node tests/run.js"
+  }
+}

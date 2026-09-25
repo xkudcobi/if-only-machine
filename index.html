@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>If-Only Machine</title>
+  <meta name="description" content="Replay a simple buying rule through years of made-up market history and find out if it was skill or luck.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23f2b33d'/%3E%3Cpath d='M6 21l6-7 5 4 9-10' stroke='%231f2430' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">⟲</span>
+      <div>
+        <h1 data-i18n="app.title">If-Only Machine</h1>
+        <p class="tagline" data-i18n="app.tagline"></p>
+      </div>
+    </div>
+    <div class="lang-switch" role="group" data-i18n-aria="lang.switch">
+      <button type="button" data-lang="tr">TR</button>
+      <span aria-hidden="true">|</span>
+      <button type="button" data-lang="en">EN</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="controls">
+      <section class="step">
+        <div class="step-head">
+          <h2 data-i18n="step.market"></h2>
+          <button type="button" id="reshuffle" class="small ghost" data-i18n="market.reshuffle" data-i18n-title="market.reshuffleTitle"></button>
+        </div>
+        <div id="market-list" class="card-list markets"></div>
+      </section>
+      <section class="step">
+        <h2 data-i18n="step.rule"></h2>
+        <div id="rule-list" class="card-list rules"></div>
+      </section>
+      <section class="step">
+        <h2 data-i18n="step.tune"></h2>
+        <div id="tune-box" class="tune"></div>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="story">
+        <div class="story-top">
+          <span id="rule-name" class="rule-name"></span>
+          <span id="edge-badge" class="edge-badge"></span>
+        </div>
+        <p id="story-headline" class="headline" aria-live="polite"></p>
+        <p id="story-sub" class="sub"></p>
+        <div class="story-actions">
+          <button type="button" id="replay" class="primary" data-i18n="story.replay"></button>
+          <button type="button" id="jump-best" data-i18n="story.best"></button>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="legend">
+          <span><i class="swatch line-ink"></i><span data-i18n="chart.price"></span></span>
+          <span><i class="swatch band"></i><span data-i18n="chart.holding"></span></span>
+          <span><i class="tri up"></i><span data-i18n="chart.buy"></span></span>
+          <span><i class="tri down"></i><span data-i18n="chart.sell"></span></span>
+        </div>
+        <canvas id="price-chart" class="chart price"></canvas>
+        <div class="legend">
+          <span><i class="swatch line-rule"></i><span data-i18n="chart.equityRule"></span></span>
+          <span><i class="swatch line-hold"></i><span data-i18n="chart.equityHold"></span></span>
+        </div>
+        <canvas id="equity-chart" class="chart equity"></canvas>
+        <p id="chart-tip" class="chart-tip" hidden></p>
+      </div>
+
+      <div class="panels">
+        <section class="panel map-panel">
+          <h2 data-i18n="map.title"></h2>
+          <p id="map-caption" class="caption"></p>
+          <div class="map-wrap">
+            <canvas id="heatmap" class="heatmap" tabindex="0" data-i18n-aria="map.aria"></canvas>
+            <p id="map-tip" class="float-tip" hidden></p>
+          </div>
+          <div class="map-legend">
+            <span class="grad-label" data-i18n="map.worse"></span>
+            <i class="gradient"></i>
+            <span class="grad-label" data-i18n="map.better"></span>
+            <span class="invalid-key"><i></i><span data-i18n="map.invalid"></span></span>
+          </div>
+          <p class="hint" data-i18n="map.hint"></p>
+        </section>
+
+        <section class="panel luck-panel">
+          <div class="panel-head">
+            <h2 data-i18n="luck.title"></h2>
+            <button type="button" id="rerun-worlds" class="small ghost" data-i18n="luck.rerun"></button>
+          </div>
+          <p id="luck-intro" class="caption"></p>
+          <canvas id="luck-hist" class="luck-hist"></canvas>
+          <div class="progress" id="luck-progress" hidden><i></i></div>
+          <p id="luck-verdict" class="verdict" aria-live="polite"></p>
+          <p id="luck-best" class="caption"></p>
+          <h3 data-i18n="luck.samples"></h3>
+          <canvas id="luck-samples" class="luck-samples"></canvas>
+        </section>
+      </div>
+
+      <section class="panel numbers-panel">
+        <h2 data-i18n="numbers.title"></h2>
+        <table class="numbers">
+          <thead>
+            <tr><th></th><th data-i18n="numbers.rule"></th><th data-i18n="numbers.hold"></th></tr>
+          </thead>
+          <tbody id="numbers-body"></tbody>
+        </table>
+      </section>
+
+      <details class="panel more">
+        <summary data-i18n="more.title"></summary>
+        <div class="more-grid">
+          <section>
+            <h3 data-i18n="custom.title"></h3>
+            <p class="caption" data-i18n="custom.help"></p>
+            <textarea id="custom-text" rows="6" spellcheck="false" data-i18n-placeholder="custom.placeholder"></textarea>
+            <div class="row">
+              <button type="button" id="custom-load" class="primary small" data-i18n="custom.load"></button>
+              <label class="file-label">
+                <input type="file" id="custom-file" accept=".csv,.txt,.tsv,text/csv,text/plain">
+                <span data-i18n="custom.file"></span>
+              </label>
+            </div>
+            <p id="custom-status" class="status" role="status"></p>
+          </section>
+          <section>
+            <h3 data-i18n="settings.title"></h3>
+            <label class="field">
+              <span data-i18n="settings.fee"></span>
+              <span class="field-row">
+                <input type="range" id="fee" min="0" max="0.02" step="0.0005">
+                <output id="fee-value"></output>
+              </span>
+              <small data-i18n="settings.feeHelp"></small>
+            </label>
+            <label class="field">
+              <span data-i18n="settings.start"></span>
+              <input type="number" id="start-coins" min="1" step="100">
+            </label>
+          </section>
+          <section>
+            <h3 data-i18n="save.title"></h3>
+            <div class="row">
+              <input type="text" id="slot-name" maxlength="60" data-i18n-placeholder="save.placeholder">
+              <button type="button" id="slot-save" class="small primary" data-i18n="save.button"></button>
+            </div>
+            <ul id="slot-list" class="slots"></ul>
+            <button type="button" id="share" class="small ghost" data-i18n="save.share"></button>
+            <p id="save-status" class="status" role="status"></p>
+          </section>
+        </div>
+      </details>
+
+      <details class="panel how">
+        <summary data-i18n="how.title"></summary>
+        <p data-i18n="how.p1"></p>
+        <p data-i18n="how.p2"></p>
+        <p data-i18n="how.p3"></p>
+        <p data-i18n="how.p4"></p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p data-i18n="footer.note"></p>
+    <p data-i18n="footer.local"></p>
+  </footer>
+
+  <script src="js/core/rng.js"></script>
+  <script src="js/core/markets.js"></script>
+  <script src="js/core/indicators.js"></script>
+  <script src="js/core/strategies.js"></script>
+  <script src="js/core/engine.js"></script>
+  <script src="js/core/sweep.js"></script>
+  <script src="js/core/worlds.js"></script>
+  <script src="js/core/csv.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/format.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/ui/canvas.js"></script>
+  <script src="js/ui/charts.js"></script>
+  <script src="js/ui/heatmap.js"></script>
+  <script src="js/ui/luck.js"></script>
+  <script src="js/ui/controls.js"></script>
+  <script src="js/ui/panels.js"></script>
+  <script src="js/ui/replay.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
